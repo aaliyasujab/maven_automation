@@ -1,49 +1,34 @@
-# Define the precise trigger conditions for execution flow
+
+name: DevOps Java CI Automation Pipeline
+
 on:
   push:
     branches: ["main"]
-
   pull_request:
     branches: ["main"]
 
+permissions:
+  contents: read
+
 jobs:
   build-and-validate:
-
-    # Provision a clean, isolated virtual environment runner
     runs-on: ubuntu-latest
 
-    steps:
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [17, 21]
 
-      # Step 1: Check out the repository source files onto the runner workspace
+    steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # Step 2: Establish the Java Runtime Environment
-      - name: Set up JDK 17
+      - name: Setup JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: "temurin"
+          java-version: ${{ matrix.java-version }}
+          distribution: temurin
+          cache: maven
 
-          # Automates Maven dependency caching
-          cache: "maven"
-
-      # Step 3: Compile the source code
-      - name: Compile Code Base
-        run: mvn clean compile
-
-      # Step 4: Run the automated test suites
       - name: Run Automated Test Suites
         run: mvn test
-
-      # Step 5: Package the application into a JAR artifact
-      - name: Package Executable Distribution
-        run: mvn package
-
-      # Step 6: Upload the generated JAR file
-      - name: Upload Build Artifact for Verification
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-ready-jar
-          path: target/*.jar
-          retention-days: 5
